@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X Shadowban Checker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --spx-bg-main: #000000;
+  --spx-bg-card: #0a0a0a;
+  --spx-bg-input: #111111;
+  --spx-text-primary: #e0e0e0;
+  --spx-text-secondary: #cccccc;
+  --spx-text-muted: #888888;
+  --spx-accent: #ffffff;
+  --spx-border: #333333;
+  --spx-border-hover: #ffffff;
+  --spx-green: #22c55e;
+  --spx-red: #ef4444;
+  --spx-yellow: #eab308;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--spx-bg-main);
+  color: var(--spx-text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+.container { max-width: 800px; margin: 0 auto; padding: 80px 24px; }
+
+/* Header */
+.page-header {
+  margin-bottom: 60px;
+  border-bottom: 1px solid var(--spx-border);
+  padding-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.page-header-left { flex: 1; }
+.page-title {
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: var(--spx-accent);
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.page-subtitle {
+  font-family: var(--font-mono);
+  color: var(--spx-text-muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Lang Toggle */
+.lang-toggle {
+  display: flex;
+  border: 1px solid var(--spx-border);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.lang-btn {
+  padding: 6px 14px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: transparent;
+  color: var(--spx-text-muted);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.lang-btn.active {
+  background: var(--spx-accent);
+  color: var(--spx-bg-main);
+}
+.lang-btn:not(.active):hover {
+  color: var(--spx-accent);
+}
+
+/* Search */
+.search-section { margin-bottom: 48px; }
+.search-row { display: flex; gap: 12px; margin-bottom: 16px; }
+.search-input-wrap { flex: 1; position: relative; }
+.search-prefix {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  font-family: var(--font-mono); font-size: 0.95rem; color: var(--spx-text-muted); pointer-events: none;
+}
+.search-input {
+  width: 100%; padding: 14px 14px 14px 30px;
+  background: var(--spx-bg-input); border: 1px solid var(--spx-border);
+  color: var(--spx-accent); font-family: var(--font-mono); font-size: 0.95rem;
+  outline: none; transition: border-color 0.2s;
+}
+.search-input:focus { border-color: var(--spx-accent); }
+.search-input::placeholder { color: #555; }
+.search-btn {
+  padding: 14px 28px; font-family: var(--font-mono); font-size: 0.85rem;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--spx-bg-main); background: var(--spx-accent);
+  border: 1px solid var(--spx-accent); cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.search-btn:hover { background: transparent; color: var(--spx-accent); }
+.search-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Section Divider */
+.section-header { display: flex; align-items: center; margin-bottom: 24px; margin-top: 48px; }
+.section-title {
+  font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.12em; color: var(--spx-accent);
+  margin-right: 16px; white-space: nowrap;
+}
+.section-line { flex: 1; height: 1px; background: var(--spx-border); }
+
+/* Status */
+.status-message {
+  font-family: var(--font-mono); font-size: 0.85rem; color: var(--spx-text-muted);
+  text-align: center; padding: 40px 0; letter-spacing: 0.03em;
+}
+.status-message.error { color: var(--spx-red); }
+
+/* Results Grid */
+.results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+.result-card {
+  background: var(--spx-bg-card); border: 1px solid var(--spx-border);
+  padding: 20px; transition: border-color 0.3s;
+}
+.result-card:hover { border-color: #555; }
+.result-card-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+}
+.result-label {
+  font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--spx-text-muted);
+}
+.result-status {
+  font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 10px;
+}
+.result-status.pass { color: var(--spx-green); border: 1px solid var(--spx-green); }
+.result-status.fail { color: var(--spx-red); border: 1px solid var(--spx-red); }
+.result-status.unknown { color: var(--spx-yellow); border: 1px solid var(--spx-yellow); }
+.result-desc { font-size: 0.82rem; color: #666; font-weight: 300; line-height: 1.5; }
+
+/* Accordion */
+.accordion-toggle {
+  display: flex; align-items: center; gap: 6px; margin-top: 10px;
+  background: none; border: none; color: var(--spx-text-muted);
+  font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.05em; cursor: pointer; padding: 0; transition: color 0.2s;
+}
+.accordion-toggle:hover { color: var(--spx-accent); }
+.accordion-toggle .arrow { transition: transform 0.2s; font-size: 0.6rem; }
+.accordion-toggle.open .arrow { transform: rotate(90deg); }
+.accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+.accordion-body.open { max-height: 200px; }
+.accordion-content { padding-top: 10px; font-size: 0.8rem; color: #555; line-height: 1.6; }
+
+/* Spinner */
+.spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid var(--spx-border); border-top-color: var(--spx-accent);
+  border-radius: 50%; animation: spin 0.6s linear infinite;
+  margin-right: 8px; vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Footer */
+.footer {
+  margin-top: 80px; padding-top: 32px;
+  border-top: 1px solid var(--spx-border);
+  text-align: center;
+}
+.footer-link {
+  font-family: var(--font-mono); font-size: 0.75rem;
+  color: var(--spx-text-muted); text-transform: uppercase;
+  letter-spacing: 0.08em; text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+.footer-link:hover {
+  color: #B7F0B1;
+  border-bottom-color: #B7F0B1;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .container { padding: 40px 16px; }
+  .page-title { font-size: 1.5rem; }
+  .page-header { flex-direction: column; gap: 16px; }
+  .results-grid { grid-template-columns: 1fr; }
+  .search-row { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1 class="page-title">X Shadowban Checker</h1>
+      <div class="page-subtitle" data-i18n="subtitle"></div>
+    </div>
+    <div class="lang-toggle">
+      <button class="lang-btn active" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" onclick="setLang('kr')">KR</button>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-section">
+    <div class="search-row">
+      <div class="search-input-wrap">
+        <span class="search-prefix">@</span>
+        <input type="text" class="search-input" id="usernameInput" placeholder="username" autocomplete="off" spellcheck="false" />
+      </div>
+      <button class="search-btn" id="checkBtn" onclick="runCheck()" data-i18n="checkBtn"></button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="resultsArea" style="display:none;">
+    <div class="section-header">
+      <span class="section-title" data-i18n="banStatusTitle"></span>
+      <div class="section-line"></div>
+    </div>
+    <div class="results-grid" id="banResults"></div>
+  </div>
+
+  <div id="statusArea"></div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <a class="footer-link" href="https://jtech-co.github.io/my-website/MLP.html" target="_blank">Developer</a>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// Config — Cloudflare Worker URL
+// ═══════════════════════════════════════
+const WORKER_URL = 'https://shadowban-proxy.mjwbryan131.workers.dev';
+
+// ═══════════════════════════════════════
+// i18n
+// ═══════════════════════════════════════
+const I18N = {
+  en: {
+    subtitle: 'Account Restriction Diagnostic Tool',
+    checkBtn: 'Check',
+    checking: 'Checking',
+    banStatusTitle: 'Ban Status',
+    clear: 'Clear',
+    detected: 'Detected',
+    unknown: 'Unknown',
+    details: 'Details',
+    invalidUser: 'Please enter a valid username (1-15 chars, letters/numbers/underscore).',
+    errorGeneric: 'An error occurred while checking. X API may be experiencing issues — please try again later.',
+    not_found: 'The specified account does not exist or has been deleted.',
+    suspend: 'This account is currently suspended.',
+    protect: 'This account is set to private. Cannot check.',
+    no_tweet: 'This account has not posted any tweets yet.',
+    rate_limit: 'Server rate limit reached. Please try again later.',
+    bans: {
+      search_suggestion_ban: {
+        label: 'Search Suggestion Ban',
+        desc: 'Account may not appear in search suggestions or autocomplete.',
+        detail: 'When active, your account won\'t show up when other users type your username in the search bar. Your posts can still be found via direct search.'
+      },
+      search_ban: {
+        label: 'Search Ban',
+        desc: 'Posts may be excluded from search results entirely.',
+        detail: 'Your posts will not appear in X search results for other users. This is the most impactful form of shadowban as it severely limits discoverability.'
+      },
+      ghost_ban: {
+        label: 'Ghost Ban',
+        desc: 'Replies may be hidden from conversation threads.',
+        detail: 'Your replies to other users\' posts may be completely invisible. The post author and other users will not see your replies unless they specifically visit your profile.'
+      },
+      reply_deboosting: {
+        label: 'Reply Deboosting',
+        desc: 'Replies may be collapsed or deprioritized.',
+        detail: 'Your replies are pushed behind a "Show more replies" barrier. They exist but require extra clicks to be seen, significantly reducing engagement.'
+      }
+    }
+  },
+  kr: {
+    subtitle: '계정 제한 진단 도구',
+    checkBtn: '확인',
+    checking: '확인 중',
+    banStatusTitle: '밴 상태',
+    clear: '정상',
+    detected: '감지됨',
+    unknown: '알 수 없음',
+    details: '상세정보',
+    invalidUser: '유효한 사용자명을 입력해주세요 (1-15자, 영문/숫자/밑줄).',
+    errorGeneric: '확인 중 오류가 발생했습니다. X API에 문제가 있을 수 있으니 나중에 다시 시도해주세요.',
+    not_found: '지정된 사용자명의 계정이 존재하지 않거나 삭제되었습니다.',
+    suspend: '이 계정은 현재 정지된 상태입니다.',
+    protect: '이 계정은 비공개 설정으로 인해 확인할 수 없습니다.',
+    no_tweet: '이 계정은 아직 포스트를 게시하지 않았습니다.',
+    rate_limit: '서버 부하로 인해 확인할 수 없습니다. 시간을 두고 다시 시도해주세요.',
+    bans: {
+      search_suggestion_ban: {
+        label: '검색 제안 밴',
+        desc: '검색 시 자동완성 후보에서 계정이 표시되지 않을 수 있습니다.',
+        detail: '활성화 시, 다른 사용자가 검색창에 사용자명을 입력해도 자동완성 후보에 나타나지 않습니다. 직접 검색을 통해서는 포스트를 찾을 수 있습니다.'
+      },
+      search_ban: {
+        label: '검색 밴',
+        desc: '포스트가 검색 결과에서 완전히 제외될 수 있습니다.',
+        detail: '다른 사용자의 X 검색 결과에 포스트가 표시되지 않습니다. 가장 영향력이 큰 형태의 섀도우밴으로, 발견 가능성을 심각하게 제한합니다.'
+      },
+      ghost_ban: {
+        label: '고스트 밴',
+        desc: '답글이 대화 스레드에서 숨겨질 수 있습니다.',
+        detail: '다른 사용자의 포스트에 대한 답글이 완전히 보이지 않을 수 있습니다. 포스트 작성자와 다른 사용자는 프로필을 직접 방문하지 않는 한 답글을 볼 수 없습니다.'
+      },
+      reply_deboosting: {
+        label: '답글 디부스팅',
+        desc: '답글이 접히거나 우선순위가 낮아질 수 있습니다.',
+        detail: '답글이 "더 많은 답글 보기" 뒤로 밀려납니다. 답글 자체는 존재하지만 확인하려면 추가 클릭이 필요하여 참여도가 크게 감소합니다.'
+      }
+    }
+  }
+};
+
+let currentLang = 'en';
+const BAN_KEYS = ['search_suggestion_ban', 'search_ban', 'ghost_ban', 'reply_deboosting'];
+
+function t(key) {
+  return I18N[currentLang][key] || I18N.en[key] || key;
+}
+function tBan(banKey, field) {
+  return I18N[currentLang].bans[banKey]?.[field] || I18N.en.bans[banKey]?.[field] || '';
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim() === lang.toUpperCase());
+  });
+  // Update static i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    el.textContent = t(key);
+  });
+  // Re-render ban results if visible
+  if (lastBanData) renderBanResults(lastBanData);
+}
+
+// ═══════════════════════════════════════
+// Crypto
+// ═══════════════════════════════════════
+async function getAESKey() {
+  const n = 'x1y2z3', r = 'ABCDEF123456', o = 'ghijklMNOPQR', a = 'stuvwxYZ7890';
+  const keyString = (n.slice(0,6) + a + o.slice(0,6)) + r + o.slice(6) + n.slice(6);
+  const keyBytes = new TextEncoder().encode(keyString.slice(0, 32));
+  return crypto.subtle.importKey('raw', keyBytes, 'AES-CBC', false, ['encrypt']);
+}
+
+async function encryptIP(ip) {
+  try {
+    const key = await getAESKey();
+    const iv = crypto.getRandomValues(new Uint8Array(16));
+    const encoded = new TextEncoder().encode(ip);
+    const encrypted = await crypto.subtle.encrypt({ name: 'AES-CBC', iv }, key, encoded);
+    const encBytes = new Uint8Array(encrypted);
+    const combined = new Uint8Array(iv.length + encBytes.length);
+    combined.set(iv, 0);
+    combined.set(encBytes, iv.length);
+    return btoa(String.fromCharCode(...combined));
+  } catch (e) {
+    console.error('Encryption error:', e);
+    return '';
+  }
+}
+
+async function solvePoW(sessionToken, difficulty) {
+  const zeros = '0'.repeat(difficulty);
+  const encoder = new TextEncoder();
+  for (let nonce = 0; nonce < 1e7; nonce++) {
+    const data = encoder.encode(sessionToken + nonce);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    const hex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    if (hex.startsWith(zeros)) return nonce.toString();
+  }
+  throw new Error('Failed to solve PoW');
+}
+
+// ═══════════════════════════════════════
+// API
+// ═══════════════════════════════════════
+async function getIP() {
+  const res = await fetch(`${WORKER_URL}/server-ip`);
+  const data = await res.json();
+  return data.ip;
+}
+
+async function checkByUser(screenName, searchban, repost) {
+  const ip = await getIP();
+  const encryptedIP = await encryptIP(ip);
+
+  // Step 1: generate-keyvalue
+  const kvRes = await fetch(`${WORKER_URL}/api/generate-keyvalue`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ screen_name: screenName, key: encryptedIP, searchban, repost })
+  });
+
+  if (!kvRes.ok) {
+    const errText = await kvRes.text();
+    console.error('generate-keyvalue error:', kvRes.status, errText);
+    throw new Error(`generate-keyvalue failed: ${kvRes.status}`);
+  }
+  const kvData = await kvRes.json();
+  console.log('generate-keyvalue response:', kvData);
+  const { key: sessionToken, value: serverValue } = kvData;
+
+  // Step 2: Proof-of-Work
+  const difficulty = Math.floor(serverValue / 123456789);
+  console.log('PoW difficulty:', difficulty, '(serverValue:', serverValue, ')');
+  const requestHash = await solvePoW(sessionToken, difficulty);
+  console.log('PoW solved, nonce:', requestHash);
+
+  // Step 3: check-by-user
+  const checkRes = await fetch(`${WORKER_URL}/api/check-by-user`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Session-Token': sessionToken,
+      'X-Request-Hash': requestHash
+    },
+    body: JSON.stringify({ screen_name: screenName, key: encryptedIP, searchban, repost })
+  });
+
+  if (!checkRes.ok) {
+    const errText = await checkRes.text();
+    console.error('check-by-user error:', checkRes.status, errText);
+    throw new Error(`API error: ${checkRes.status}`);
+  }
+
+  const data = await checkRes.json();
+  console.log('check-by-user full response:', JSON.stringify(data, null, 2));
+  return data;
+}
+
+// ═══════════════════════════════════════
+// UI
+// ═══════════════════════════════════════
+let lastBanData = null;
+
+function renderBanResults(data) {
+  lastBanData = data;
+  const grid = document.getElementById('banResults');
+  grid.innerHTML = '';
+
+  // Try multiple possible response structures
+  const status = data?.api_status || data?.response?.api_status || data;
+  console.log('Ban status object:', JSON.stringify(status));
+
+  BAN_KEYS.forEach(banKey => {
+    // Try direct, nested, and various response structures
+    let value = status?.[banKey];
+    if (value === undefined) value = data?.[banKey];
+    if (value === undefined) value = data?.response?.[banKey];
+
+    let statusText, statusClass;
+    if (value === false || value === 'false') { statusText = t('clear'); statusClass = 'pass'; }
+    else if (value === true || value === 'true') { statusText = t('detected'); statusClass = 'fail'; }
+    else { statusText = t('unknown'); statusClass = 'unknown'; }
+
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = `
+      <div class="result-card-header">
+        <span class="result-label">${tBan(banKey, 'label')}</span>
+        <span class="result-status ${statusClass}">${statusText}</span>
+      </div>
+      <div class="result-desc">${tBan(banKey, 'desc')}</div>
+      <button class="accordion-toggle" onclick="toggleAccordion(this)">
+        <span class="arrow">▶</span> ${t('details')}
+      </button>
+      <div class="accordion-body">
+        <div class="accordion-content">${tBan(banKey, 'detail')}</div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function toggleAccordion(btn) {
+  btn.classList.toggle('open');
+  btn.nextElementSibling.classList.toggle('open');
+}
+
+function showStatus(msg, isError = false) {
+  document.getElementById('statusArea').innerHTML =
+    `<div class="status-message ${isError ? 'error' : ''}">${msg}</div>`;
+}
+function clearStatus() {
+  document.getElementById('statusArea').innerHTML = '';
+}
+
+function getErrorMessage(data) {
+  const s = data?.api_status?.status || data?.response?.api_status?.status || data?.status;
+  if (s && I18N[currentLang][s]) return t(s);
+  return null;
+}
+
+// ═══════════════════════════════════════
+// Main
+// ═══════════════════════════════════════
+async function runCheck() {
+  const input = document.getElementById('usernameInput');
+  const btn = document.getElementById('checkBtn');
+  let username = input.value.trim().replace(/^@/, '');
+
+  if (!username || !/^[a-zA-Z0-9_]{1,15}$/.test(username)) {
+    showStatus(t('invalidUser'), true);
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span>${t('checking')}...`;
+  document.getElementById('resultsArea').style.display = 'none';
+  showStatus(`<span class="spinner"></span> ${t('checking')} @${username}...`);
+
+  try {
+    const data = await checkByUser(username, true, true);
+
+    const errMsg = getErrorMessage(data);
+    if (errMsg) {
+      showStatus(errMsg, true);
+      btn.disabled = false;
+      btn.textContent = t('checkBtn');
+      return;
+    }
+
+    clearStatus();
+    document.getElementById('resultsArea').style.display = 'block';
+    renderBanResults(data);
+
+  } catch (err) {
+    console.error(err);
+    showStatus(t('errorGeneric'), true);
+  }
+
+  btn.disabled = false;
+  btn.textContent = t('checkBtn');
+}
+
+// Init
+document.getElementById('usernameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runCheck();
+});
+setLang('en');
+</script>
+
+</body>
+</html>
