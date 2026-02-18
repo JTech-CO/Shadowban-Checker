@@ -7,7 +7,7 @@
 ## 1. 프로젝트 개요 (Overview)
 
 - **버전**: 1.0.0
-- **데모**: [GitHub Pages 배포 URL]
+- **링크**: [X 쉐도우밴 진단기](<https://jtech-co.github.io/Shadowban-Checker/index.html>)
 
 본 프로젝트는 다음과 같은 문제를 해결합니다:
 - X 플랫폼에서 사용자 모르게 적용되는 계정 제한(섀도우밴 등)의 존재 여부 확인
