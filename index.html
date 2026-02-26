@@ -250,11 +250,11 @@
 
     .result-label {
       font-family: var(--font-mono);
-      font-size: 0.75rem;
+      font-size: 0.85rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: var(--spx-text-muted);
+      color: #ffffff;
     }
 
     .result-status {
@@ -282,8 +282,8 @@
     }
 
     .result-desc {
-      font-size: 0.82rem;
-      color: #666;
+      font-size: 0.88rem;
+      color: #cccccc;
       font-weight: 300;
       line-height: 1.5;
     }
@@ -430,6 +430,7 @@
       color: var(--spx-text-primary);
       line-height: 1.7;
       font-weight: 300;
+      white-space: pre-line;
     }
 
     .grok-verdict-text.loading {
@@ -481,8 +482,8 @@
     }
 
     .grok-checkbox-row input[type="checkbox"]:checked {
-      background: var(--spx-accent);
-      border-color: var(--spx-accent);
+      background: var(--spx-green);
+      border-color: var(--spx-green);
     }
 
     .grok-checkbox-row label {
@@ -637,7 +638,7 @@
             detail: 'Your replies are pushed behind a "Show more replies" barrier. They exist but require extra clicks to be seen, significantly reducing engagement.'
           }
         },
-        grokSectionTitle: 'AI Policy Review',
+        grokSectionTitle: 'X Policy Review',
         grokVerdictLabel: 'Grok Assessment',
         grokCheckboxLabel: 'Grok deep inspection',
 
@@ -683,7 +684,7 @@
             detail: '답글이 "더 많은 답글 보기" 뒤로 밀려납니다. 답글 자체는 존재하지만 확인하려면 추가 클릭이 필요하여 참여도가 크게 감소합니다.'
           }
         },
-        grokSectionTitle: 'AI 정책 검토',
+        grokSectionTitle: 'X 정책 검토',
         grokVerdictLabel: 'Grok 평가',
         grokCheckboxLabel: 'Grok 세부검사 진행',
 
@@ -697,6 +698,7 @@
     const BAN_KEYS = ['search_suggestion_ban', 'search_ban', 'ghost_ban', 'reply_deboosting'];
     let lastCheckedUsername = null;
     let lastBanApiData = null;
+    let langLocked = false;
 
     function t(key) {
       return I18N[currentLang][key] || I18N.en[key] || key;
@@ -706,6 +708,7 @@
     }
 
     function setLang(lang) {
+      if (langLocked) return;
       currentLang = lang;
       document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.toggle('active', btn.textContent.trim() === lang.toUpperCase());
@@ -914,6 +917,11 @@
 
         // Run Grok analysis if checkbox is checked
         if (document.getElementById('grokCheckbox').checked) {
+          langLocked = true;
+          document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.style.opacity = '0.4';
+            btn.style.cursor = 'not-allowed';
+          });
           runGrokAnalysis(username, data);
         }
 
@@ -959,7 +967,7 @@
         const res = await fetch(`${WORKER_URL}/grok/analyze`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, banResults })
+          body: JSON.stringify({ username, banResults, lang: currentLang })
         });
 
         if (!res.ok) {
